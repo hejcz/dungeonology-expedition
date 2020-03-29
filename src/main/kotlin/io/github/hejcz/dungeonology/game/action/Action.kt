@@ -1,17 +1,20 @@
 package io.github.hejcz.dungeonology.game.action
 
 import io.github.hejcz.dungeonology.game.card.AuxiliaryEffectId
-import io.github.hejcz.dungeonology.game.card.SelectedCardEffect
 import io.github.hejcz.dungeonology.game.card.CardId
+import io.github.hejcz.dungeonology.game.card.SelectedCardEffect
 import io.github.hejcz.dungeonology.game.jinx.JinxId
-import io.github.hejcz.dungeonology.game.zone.ZoneId
 
-interface Action
+sealed class Action
 
-object SubmitThesis
+object SubmitThesis : Action()
 
-data class Rest(val cardsToDrop: Set<CardId>, val jinxToDrop: JinxId)
+data class Rest(val cardsToDrop: Set<CardId>, val jinxToDrop: JinxId) : Action()
 
-data class MoveScholar(val target: ZoneId)
+data class MoveScholar(val exit: MoveDirection) : Action()
 
-data class PlayCard(val id: CardId, val effect: SelectedCardEffect, val auxiliaryEffectId: AuxiliaryEffectId)
+data class PlayCard(val id: CardId, val effect: SelectedCardEffect, val auxiliaryEffectId: AuxiliaryEffectId) : Action()
+
+object Finish : Action()
+
+object Start : Action()
