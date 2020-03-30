@@ -2,21 +2,11 @@ package io.github.hejcz.dungeonology
 
 import io.github.hejcz.dungeonology.game.*
 import io.github.hejcz.dungeonology.game.action.Finish
-import io.github.hejcz.dungeonology.game.action.MoveDirection
-import io.github.hejcz.dungeonology.game.action.MoveScholar
 import io.github.hejcz.dungeonology.game.action.Start
 import io.github.hejcz.dungeonology.game.card.BackStab
 import io.github.hejcz.dungeonology.game.card.Card4
-import io.github.hejcz.dungeonology.game.card.CardId
 import io.github.hejcz.dungeonology.game.card.NoCardInProgress
-import io.github.hejcz.dungeonology.game.zone.Cube
-import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.Test
-
-class TestRandomizer() : Randomizer {
-    override fun cube(): Cube = Cube.GREEN
-    override fun scholarColor(): Color = Color.BLUE
-}
 
 class BasicFlowTest {
 
@@ -31,7 +21,8 @@ class BasicFlowTest {
             cardInProgress = NoCardInProgress,
             studyInProgress = NoStudyInProgress,
             randomizer = TestRandomizer(),
-            deck = Deck.from(listOf(Card4, BackStab, Card4))
+            deck = Deck.from(listOf(Card4, BackStab, Card4)),
+            zones = TestZones()
         )
         game.apply(PlayerId(1), Start)
             .apply { hasNewHandContaining(PlayerId(1), 1) }
@@ -49,7 +40,8 @@ class BasicFlowTest {
             cardInProgress = NoCardInProgress,
             studyInProgress = NoStudyInProgress,
             randomizer = TestRandomizer(),
-            deck = Deck.from(listOf(BackStab, Card4, Card4))
+            deck = Deck.from(listOf(BackStab, Card4, Card4)),
+            zones = TestZones()
         )
         game.apply(PlayerId(1), Start)
             .apply { hasNewHandContaining(PlayerId(2), 3) }
@@ -67,7 +59,8 @@ class BasicFlowTest {
             cardInProgress = NoCardInProgress,
             studyInProgress = NoStudyInProgress,
             randomizer = TestRandomizer(),
-            deck = Deck.from(listOf(BackStab, Card4, Card4, BackStab, Card4, Card4, BackStab, Card4))
+            deck = Deck.from(listOf(BackStab, Card4, Card4, BackStab, Card4, Card4, BackStab, Card4)),
+            zones = TestZones()
         )
         game.apply(PlayerId(1), Start)
             .apply(PlayerId(1), Finish)
@@ -78,7 +71,3 @@ class BasicFlowTest {
 
 }
 
-private fun Game.hasNewHandContaining(playerId: PlayerId, vararg ids: Int) {
-    Assertions.assertThat(this.events.getValue(playerId))
-        .contains(NewHand(ids.toList().map { CardId(it) }))
-}

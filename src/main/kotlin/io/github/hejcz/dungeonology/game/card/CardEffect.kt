@@ -35,7 +35,7 @@ object LovePotionMainEffect : CardEffect {
         val passedCube = Cube.valueOf(ctx.data["cube"] as String)
         val isLastPlayerToPassCube = stage == otherPlayers.size - 1
         return when {
-            isLastPlayerToPassCube -> ctx.game.addCube(passedCube)
+            isLastPlayerToPassCube -> ctx.game.addCube(passedCube).copy(cardInProgress = NoCardInProgress)
             else -> ctx.game.addCube(passedCube).copy(cardInProgress = SomeCardInProgress(this, stage + 1))
         }
     }

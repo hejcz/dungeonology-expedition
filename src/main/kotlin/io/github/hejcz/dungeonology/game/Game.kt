@@ -2,7 +2,7 @@ package io.github.hejcz.dungeonology.game
 
 import io.github.hejcz.dungeonology.game.action.*
 import io.github.hejcz.dungeonology.game.card.CardInProgress
-import io.github.hejcz.dungeonology.game.zone.Cube
+import io.github.hejcz.dungeonology.game.zone.*
 import java.lang.RuntimeException
 import kotlin.math.min
 
@@ -13,7 +13,10 @@ data class Game(
     val studyInProgress: StudyInProgress,
     val randomizer: Randomizer,
     val studentsOnBonfire: Int = 0,
-    val deck: Deck
+    val deck: Deck,
+    val zones: Zones,
+    val currentZone: Zone = NoZone,
+    val board: Map<Point, Zone> = mapOf(Point(0, 0) to StartingZone())
 ) {
 
     fun apply(playerId: PlayerId, action: Action): Game {
@@ -21,20 +24,32 @@ data class Game(
             return copy(events = mapOf(playerId to setOf(ErrorEvent(it))))
         }
         return when (action) {
+            Start -> start()
+            Finish -> finish(playerId)
+            is MoveScholar -> move(playerId)
+            is PlaceZone -> placeZone(playerId, action)
             is SubmitThesis -> this
             is Rest -> this
-            is MoveScholar -> this
             is PlayCard -> this
-            Finish -> processFinish(playerId)
-            Start -> processStart()
         }
+    }
+
+    private fun placeZone(playerId: PlayerId, action: PlaceZone): Game {
+        val newBoard = board + (action.p to currentZone)
+        return copy(currentZone = NoZone, board = newBoard, events = players.map { it.id to
+                setOf(PlayerUpdated(playerId, action.p), BoardUpdated(newBoard)) }.toMap())
+    }
+
+    private fun move(playerId: PlayerId): Game {
+        val (zone, newZones) = zones.draw(Floor.FIRST)
+        return copy(zones = newZones, currentZone = zone, events = mapOf(playerId to setOf(NewZone(zone.id))))
     }
 
     private fun validate(action: Action): ErrorCode? {
         return null
     }
 
-    private fun processFinish(playerId: PlayerId): Game {
+    private fun finish(playerId: PlayerId): Game {
         val player = getPlayer(playerId)
         val (cards, updatedDeck) = deck.draw(player.scholar.cards() - player.cards.size)
         val updatedPlayer = player.copy(cards = player.cards + cards)
@@ -52,7 +67,7 @@ data class Game(
         )
     }
 
-    private fun processStart(): Game {
+    private fun start(): Game {
         val firstPlayerColor = randomizer.scholarColor()
         val firstScholarIndex = players.indexOfFirst { it.color == firstPlayerColor }
         val (updatedDeck, updatedPlayers) = dealStartingCards(firstScholarIndex)
