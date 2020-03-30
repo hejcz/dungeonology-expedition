@@ -4,6 +4,7 @@ import io.github.hejcz.dungeonology.game.action.*
 import io.github.hejcz.dungeonology.game.card.CardInProgress
 import io.github.hejcz.dungeonology.game.zone.Cube
 import java.lang.RuntimeException
+import kotlin.math.min
 
 data class Game(
     val players: List<Player>,
@@ -65,7 +66,7 @@ data class Game(
     private fun dealStartingCards(firstScholarIndex: Int): ReducedPlayers =
         generateSequence(firstScholarIndex) { it.inc() % players.size }
             .take(players.size)
-            .zip(generateSequence(1, Int::inc))
+            .zip(generateSequence(1) { min(4, it.inc()) })
             .fold(ReducedPlayers(deck, emptyList())) { acc, (pIdx, n) ->  dealNCards(acc, n, pIdx) }
 
     private fun dealNCards(acc: ReducedPlayers, numberOfCardsToDrawn: Int, playerIndex: Int): ReducedPlayers {
