@@ -2,15 +2,16 @@ package io.github.hejcz.dungeonology.game
 
 import io.github.hejcz.dungeonology.game.action.*
 import io.github.hejcz.dungeonology.game.card.CardInProgress
+import io.github.hejcz.dungeonology.game.card.NoCardInProgress
 import io.github.hejcz.dungeonology.game.zone.*
 import java.lang.RuntimeException
 import kotlin.math.min
 
 data class Game(
     val players: List<Player>,
-    val events: Map<PlayerId, Set<Event>>,
-    val cardInProgress: CardInProgress,
-    val studyInProgress: StudyInProgress,
+    val events: Map<PlayerId, Set<Event>> = emptyMap(),
+    val cardInProgress: CardInProgress = NoCardInProgress,
+    val studyInProgress: StudyInProgress = NoStudyInProgress,
     val randomizer: Randomizer,
     val studentsOnBonfire: Int = 0,
     val deck: Deck,

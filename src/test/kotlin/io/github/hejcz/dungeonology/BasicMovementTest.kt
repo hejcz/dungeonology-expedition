@@ -5,7 +5,6 @@ import io.github.hejcz.dungeonology.game.action.MoveScholar
 import io.github.hejcz.dungeonology.game.action.PlaceZone
 import io.github.hejcz.dungeonology.game.action.Start
 import io.github.hejcz.dungeonology.game.card.Card4
-import io.github.hejcz.dungeonology.game.card.NoCardInProgress
 import io.github.hejcz.dungeonology.game.zone.Point
 import io.github.hejcz.dungeonology.game.zone.ShepherdsSanctuary
 import io.github.hejcz.dungeonology.game.zone.StartingZone
@@ -17,13 +16,7 @@ class BasicMovementTest {
     @Test
     fun `leave starting zone`() {
         val game = Game(
-            players = listOf(
-                Player(PlayerId(1), Rebeca, Color.BLUE),
-                Player(PlayerId(2), Vincenzo, Color.YELLOW)
-            ),
-            events = emptyMap(),
-            cardInProgress = NoCardInProgress,
-            studyInProgress = NoStudyInProgress,
+            players = twoPlayers(),
             randomizer = TestRandomizer(),
             deck = Deck.from(List(20) { Card4 }),
             zones = TestZones(mapOf(Floor.FIRST to listOf(ShepherdsSanctuary())))
