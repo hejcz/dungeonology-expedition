@@ -38,22 +38,52 @@ data class Game(
 
     private fun placeZone(playerId: PlayerId, action: PlaceZone): Game {
         val newBoard = board + (action.p to currentZone)
-        return copy(currentZone = NoZone, board = newBoard, events = players.map {
-            it.id to
-                    setOf(PlayerUpdated(playerId, action.p), BoardUpdated(newBoard))
-        }.toMap())
+        return copy(
+            currentZone = NoZone, board = newBoard,
+            events = players.map { it.id to setOf(PlayerUpdated(playerId, action.p), BoardUpdated(newBoard)) }.toMap(),
+            playersPositions = playersPositions - playerId + (playerId to action.p)
+        )
     }
 
     private fun discoverZone(playerId: PlayerId): Game {
         val (zone, newZones) = zones.draw(Floor.FIRST)
-        println(zone)
         return when {
-            zone == null || drawnZoneCantBePlaced(playerId, zone) ->
-                copy(events = mapOf(playerId to setOf(CantDiscoverNewZone)))
-            else ->
-                copy(zones = newZones, currentZone = zone, events = mapOf(playerId to setOf(NewZone(zone.id))))
+            zone == null ->
+                copy(events = mapOf(playerId to setOf(NoZonesLeft)))
+            drawnZoneCantBePlaced(playerId, zone) -> when {
+                newZones.count(Floor.FIRST) == 0 -> copy(events = mapOf(playerId to setOf(CantDiscoverNewZone(zone))))
+                else -> tryToRewindZones(playerId, newZones, zone)
+            }
+            else -> copy(zones = newZones, currentZone = zone, events = mapOf(playerId to setOf(NewZone(zone.id))))
         }
     }
+
+    private fun tryToRewindZones(playerId: PlayerId, otherZones: Zones, invalidZone: Zone): Game {
+        val (rewindedZone, rewindedZones) = rewindZones(playerId, otherZones, invalidZone)
+        return if (rewindedZone == invalidZone) {
+            copy(events = mapOf(playerId to setOf(CantDiscoverNewZone(invalidZone))))
+        } else {
+            copy(
+                zones = rewindedZones,
+                currentZone = rewindedZone,
+                events = mapOf(playerId to setOf(NewZone(rewindedZone.id)))
+            )
+        }
+    }
+
+    private fun rewindZones(playerId: PlayerId, zonesLeft: Zones, checkedZone: Zone): Pair<Zone, Zones> {
+        val res = generateSequence(RewindingZones(zonesLeft, checkedZone, emptyList())) { last ->
+            val (zone, newZones) = last.zones.draw(Floor.FIRST)
+            RewindingZones(newZones, zone, last.poppedZones + last.current!!)
+        }.first { (_, current, _) -> current == null || !drawnZoneCantBePlaced(playerId, current) }
+        return if (res.current == null) {
+            checkedZone to zonesLeft
+        } else {
+            res.current to res.zones.append(Floor.FIRST, res.poppedZones)
+        }
+    }
+
+    private data class RewindingZones(val zones: Zones, val current: Zone?, val poppedZones: List<Zone>)
 
     private fun drawnZoneCantBePlaced(playerId: PlayerId, zone: Zone) =
         playersPositions.getValue(playerId).furtherSurrounding()

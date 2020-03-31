@@ -13,4 +13,9 @@ class TestZones(private val zones: Map<Floor, List<Zone>> = emptyMap()) : Zones 
                     TestZones(zones.mapValues { if (it.key == floor) it.value.drop(1) else it.value })
         }
     }
+
+    override fun count(floor: Floor): Int = zones[floor]?.size ?: 0
+
+    override fun append(floor: Floor, zonesToAppend: List<Zone>): Zones =
+        TestZones(zones.mapValues { if (it.key == floor) it.value + zonesToAppend else it.value })
 }

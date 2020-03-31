@@ -13,7 +13,9 @@ data class NewHand(val cards: List<CardId>) : Event
 
 data class NewZone(val id: ZoneId) : Event
 
-object CantDiscoverNewZone : Event
+object NoZonesLeft : Event
+
+data class CantDiscoverNewZone(val zone: Zone) : Event
 
 data class BoardUpdated(val zones: Map<Point, Zone>) : Event
 
