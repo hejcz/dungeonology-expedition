@@ -12,9 +12,9 @@ class ZonePlacementValidatorTest {
     @MethodSource("io.github.hejcz.dungeonology.game.zone.ZonePlacementValidatorTestKt#zones")
     fun zonesPlacementValidation(expectation: Boolean, zone: Zone, point: Point, presentZones: Map<Point, Zone>) {
         if (expectation) {
-            Assertions.assertTrue(ZonePlacementValidator.isValid(zone, point, presentZones))
+            Assertions.assertTrue(ZonePlacementValidator.isValid(Point(0, 0), zone, point, presentZones))
         } else {
-            Assertions.assertFalse(ZonePlacementValidator.isValid(zone, point, presentZones))
+            Assertions.assertFalse(ZonePlacementValidator.isValid(Point(0, 0), zone, point, presentZones))
         }
     }
 

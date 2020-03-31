@@ -4,7 +4,6 @@ import io.github.hejcz.dungeonology.game.action.*
 import io.github.hejcz.dungeonology.game.card.CardInProgress
 import io.github.hejcz.dungeonology.game.card.NoCardInProgress
 import io.github.hejcz.dungeonology.game.zone.*
-import java.lang.RuntimeException
 import kotlin.math.min
 
 data class Game(
@@ -17,7 +16,8 @@ data class Game(
     val deck: Deck,
     val zones: Zones,
     val currentZone: Zone = NoZone,
-    val board: Map<Point, Zone> = mapOf(Point(0, 0) to StartingZone())
+    val board: Map<Point, Zone> = mapOf(Point(0, 0) to StartingZone()),
+    val playersPositions: Map<PlayerId, Point> = players.map { it.id to Point(0, 0) }.toMap()
 ) {
 
     fun apply(playerId: PlayerId, action: Action): Game {
@@ -27,24 +27,37 @@ data class Game(
         return when (action) {
             Start -> start()
             Finish -> finish(playerId)
-            is MoveScholar -> move(playerId)
+            is DiscoverZone -> discoverZone(playerId)
             is PlaceZone -> placeZone(playerId, action)
             is SubmitThesis -> this
             is Rest -> this
             is PlayCard -> this
+            is MoveScholar -> move(playerId, action)
         }
     }
 
     private fun placeZone(playerId: PlayerId, action: PlaceZone): Game {
         val newBoard = board + (action.p to currentZone)
-        return copy(currentZone = NoZone, board = newBoard, events = players.map { it.id to
-                setOf(PlayerUpdated(playerId, action.p), BoardUpdated(newBoard)) }.toMap())
+        return copy(currentZone = NoZone, board = newBoard, events = players.map {
+            it.id to
+                    setOf(PlayerUpdated(playerId, action.p), BoardUpdated(newBoard))
+        }.toMap())
     }
 
-    private fun move(playerId: PlayerId): Game {
+    private fun discoverZone(playerId: PlayerId): Game {
         val (zone, newZones) = zones.draw(Floor.FIRST)
-        return copy(zones = newZones, currentZone = zone, events = mapOf(playerId to setOf(NewZone(zone.id))))
+        println(zone)
+        return when {
+            zone == null || drawnZoneCantBePlaced(playerId, zone) ->
+                copy(events = mapOf(playerId to setOf(CantDiscoverNewZone)))
+            else ->
+                copy(zones = newZones, currentZone = zone, events = mapOf(playerId to setOf(NewZone(zone.id))))
+        }
     }
+
+    private fun drawnZoneCantBePlaced(playerId: PlayerId, zone: Zone) =
+        playersPositions.getValue(playerId).furtherSurrounding()
+            .none { ZonePlacementValidator.isValid(playersPositions.getValue(playerId), zone, it, board) }
 
     private fun validate(action: Action): ErrorCode? {
         return null
@@ -83,7 +96,7 @@ data class Game(
         generateSequence(firstScholarIndex) { it.inc() % players.size }
             .take(players.size)
             .zip(generateSequence(1) { min(4, it.inc()) })
-            .fold(ReducedPlayers(deck, emptyList())) { acc, (pIdx, n) ->  dealNCards(acc, n, pIdx) }
+            .fold(ReducedPlayers(deck, emptyList())) { acc, (pIdx, n) -> dealNCards(acc, n, pIdx) }
 
     private fun dealNCards(acc: ReducedPlayers, numberOfCardsToDrawn: Int, playerIndex: Int): ReducedPlayers {
         val (cards, newDeck) = acc.deck.draw(numberOfCardsToDrawn)
@@ -112,5 +125,11 @@ data class Game(
     fun takeStunToken(n: Int): Game = this
 
     fun stealCubeFrom(from: PlayerId, cube: Cube): Game = this
+
+    private fun move(playerId: PlayerId, action: MoveScholar) =
+        copy(
+            playersPositions = playersPositions - playerId + (playerId to action.p),
+            events = players.map { it.id to setOf(PlayerUpdated(playerId, action.p)) }.toMap()
+        )
 
 }

@@ -12,7 +12,9 @@ object SubmitThesis : Action()
 
 data class Rest(val cardsToDrop: Set<CardId>, val jinxToDrop: JinxId) : Action()
 
-object MoveScholar : Action()
+object DiscoverZone : Action()
+
+data class MoveScholar(val p: Point) : Action()
 
 data class PlaceZone(val p: Point) : Action()
 
